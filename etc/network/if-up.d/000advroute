@@ -1,0 +1,25 @@
+#!/bin/sh
+#
+# ifup hook script for advroute
+#
+# Licensed under the GNU GPL.  See /usr/share/common-licenses/GPL.
+#
+
+case "$ADDRFAM" in
+    inet) : ;;
+    *) exit 0 ;;
+esac
+
+case "$METHOD" in
+    static) : ;;
+    *) exit 0 ;;
+esac
+
+if [ -z "$IF_RTTABLES" ] ; then
+    # leave as default
+    exit 0
+fi
+
+for RT in $IF_RTTABLES; do
+    /sbin/ip route add $IF_NETWORK/$IF_NETMASK dev $IFACE table $RT src $IF_ADDRESS
+done

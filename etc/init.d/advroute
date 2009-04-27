@@ -1,0 +1,64 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          advroute
+# Required-Start:    $network $syslog
+# Required-Stop:     $network 
+# Default-Start:     2 3 5 
+# Default-Stop:      0 6 
+# Description: Starts advroute routing configuration 
+# short-description: advroute routing configuration
+### END INIT INFO
+
+#includes lsb functions 
+. /lib/lsb/init-functions
+
+PATH=/sbin:/bin
+NAME=advroute
+DESC='Advanced Routing'
+
+test -x /sbin/advroute || exit 0
+
+set -e
+
+[ -r /etc/default/advroute ] && . /etc/default/advroute
+
+START_ADVROUTE="$( echo $START_ADVROUTE | /usr/bin/tr a-z A-Z)"
+
+COMMAND="$1" 
+test -n "$1" && shift
+
+case "$COMMAND" in
+  start)
+  	
+  	if [ "$START_ADVROUTE" = "NO"  ]; then
+		log_warning_msg "$DESC disabled via /etc/default/advroute"
+		exit 0
+	else 
+		log_daemon_msg "Starting $DESC" "$NAME"
+		/sbin/advroute start "$@" >/dev/null || log_end_msg 1
+		log_end_msg 0
+	fi
+	;;
+  stop)
+	log_daemon_msg "Stopping $DESC" "$NAME"
+	/sbin/advroute stop "$@" >/dev/null || log_end_msg 1
+	log_end_msg 0
+	;;
+  restart|force-reload)
+  	if [ "$START_ADVROUTE" = "NO"  ]; then
+		log_warning_msg "$DESC disabled via /etc/default/advroute"
+		exit 0
+	else 
+		log_daemon_msg "Restarting $DESC configuration"
+		/sbin/advroute restart "$@" >/dev/null || log_end_msg 1
+		log_action_end_msg 0 
+	fi
+	;;
+  *)
+	N=/etc/init.d/$NAME
+	log_action_msg "Usage: $N {start|stop|restart|force-reload} [<args>]" >&2
+	exit 1
+	;;
+esac
+
+exit 0

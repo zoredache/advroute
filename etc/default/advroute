@@ -1,0 +1,6 @@
+#To enable advroute at startup set this to != NO
+START_ADVROUTE=NO
+
+#Set of rules to start by default
+#START_RULES=standard
+START_RULES=split

@@ -1,0 +1,175 @@
+#!/bin/bash
+
+DEBUG=0
+ERROR=0
+ACTION='none'
+
+# Make sure only root can run us.
+if [ ! "${UID}" = 0 ] ; then
+    echo >&2
+    echo >&2
+    echo >&2 "Only user root can run FireHOL."
+    echo >&2
+fi
+
+START_ADVROUTE=NO
+START_RULES=standard
+if [ -e /etc/default/advroute ] ; then
+    source /etc/default/advroute
+fi
+
+# Set path
+export PATH="/bin:/usr/bin:/sbin:/usr/sbin"
+
+# Commands
+CMD_RM='/bin/rm'
+CMD_IP='/bin/ip'
+CMD_TRUE='/bin/true'
+CMD_LESS='/usr/bin/less'
+
+# Make sure our generated files cannot be accessed by anyone else.
+umask 077
+
+# Trap signals
+trap '' EXIT
+trap '' SIGHUP
+
+# Config File
+ADVROUTE_CONFIG='/etc/network/routes'
+ADVROUTE_TMP="/tmp/.advroute-tmp-$$-${RANDOM}-${RANDOM}"
+
+SECTION_TYPE=""
+SECTION_NAME=""
+
+rrtable() {
+    SECTION_TYPE="rrtable"
+    SECTION_NAME=${1}
+    echo "# ${SECTION_TYPE} ${SECTION_NAME}" >> ${ADVROUTE_TMP}
+}
+
+route() {
+    if [ ${SECTION_TYPE} != "rrtable" ] ; then
+        ERROR=1
+        return 1
+    fi
+    if [ ${ACTION} == "start" ] ; then
+        echo "${CMD_IP} route add $* proto static table ${SECTION_NAME} &>/dev/null" >> ${ADVROUTE_TMP}
+    fi
+    if [ ${ACTION} == "stop" ] ; then
+        echo "${CMD_IP} route flush $* proto static table ${SECTION_NAME} &>/dev/null" >> ${ADVROUTE_TMP}
+    fi
+}
+
+rules() {
+    SECTION_TYPE="rules"
+    SECTION_NAME=${1}
+    if [ ${SECTION_NAME} == ${START_RULES} ] ; then
+        echo "# ${SECTION_TYPE} ${SECTION_NAME}" >> ${ADVROUTE_TMP}
+        echo "${CMD_IP} rule flush" >> ${ADVROUTE_TMP}
+    fi
+}
+
+rule() {
+    if [ ${SECTION_TYPE} != "rules" ] ; then
+        ERROR=1
+        return 1
+    fi
+    if [ ${SECTION_NAME} == ${START_RULES} ] ; then
+        echo "${CMD_IP} rule add $*" >> ${ADVROUTE_TMP}
+    fi
+}
+
+doStatus() {
+    (
+        echo 
+        echo "--- ROUTES ---------------------------------------------------------------------"
+        echo 
+        ${CMD_IP} -stats route show table all
+
+        echo 
+        echo 
+        echo "--- RULES ----------------------------------------------------------------------"
+        echo 
+        ${CMD_IP} -stats rule show
+
+        echo 
+        echo 
+        echo "--- ADDR -----------------------------------------------------------------------"
+        echo 
+        ${CMD_IP} -stats addr show
+
+        echo 
+        echo 
+        echo "--- LINK -----------------------------------------------------------------------"
+        echo 
+        ${CMD_IP} -stats link show
+
+        echo 
+    ) | ${CMD_LESS}
+    return 0
+}
+
+doDebug() {
+    DEBUG=1
+    echo "advroute: Processing file ${ADVROUTE_CONFIG}"
+    source ${ADVROUTE_CONFIG}
+    echo "advroute: Displaying rules and routes"
+    ${CMD_LESS} ${ADVROUTE_TMP}
+    test -e ${ADVROUTE_TMP} && ${CMD_RM} -rf ${ADVROUTE_TMP}
+}
+
+doStart() {
+    echo "advroute: Processing file ${ADVROUTE_CONFIG}"
+    source ${ADVROUTE_CONFIG}
+    echo "${CMD_IP} route flush cache" >> ${ADVROUTE_TMP}
+    if [ ${ERROR} -eq 0 ] ; then
+        echo "advroute: Activating new rules and routes"
+        source ${ADVROUTE_TMP}
+        test -e ${ADVROUTE_TMP} && ${CMD_RM} -rf ${ADVROUTE_TMP}
+    else
+        echo "advroute: Error generating script"
+    fi
+}
+
+doStop() {
+    START_RULES=standard
+    echo "advroute: Processing file ${ADVROUTE_CONFIG}"
+    source ${ADVROUTE_CONFIG}
+    echo "${CMD_IP} route flush cache" >> ${ADVROUTE_TMP}
+    if [ ${ERROR} -eq 0 ] ; then
+        echo "advroute: Flushing advanced routes"
+        source ${ADVROUTE_TMP}
+        test -e ${ADVROUTE_TMP} && ${CMD_RM} -rf ${ADVROUTE_TMP}
+    else
+        echo "advroute: Error generating script"
+    fi
+}
+
+
+me="${0}"
+arg="${1}"
+
+case "${arg}" in
+    debug)
+        ACTION='debug'
+        doDebug
+        ;;
+    status)
+        ACTION='status'
+        doStatus
+        ;;
+    startrules)
+        ACTION='startrules'
+        ;;
+    start)
+        ACTION='start'
+        doStart
+        ;;
+    stop)
+        ACTION='stop'
+        doStop
+        ;;
+    *)
+        echo "advroute: Unknown argument"
+        ;;
+esac

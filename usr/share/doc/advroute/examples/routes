@@ -1,0 +1,21 @@
+rrtable main
+    route default via 172.18.0.1
+
+rrtable district
+    route default via 172.18.0.1
+
+rrtable comcast
+    route default via 192.168.2.1
+
+rules standard
+    rule priority 32766 lookup main
+    rule priority 32767 lookup default
+
+rules split
+    rule priority 100 to 172.16.0.0/12 lookup district
+    rule priority 100 to 168.99.101.0/24 lookup district
+    rule priority 500 fwmark 10 lookup district
+    rule priority 600 fwmark 20 lookup comcast
+    rule priority 1000 lookup district
+    rule priority 32766 lookup main
+    rule priority 32767 lookup default

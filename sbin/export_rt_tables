@@ -1,0 +1,10 @@
+#!/bin/bash
+
+eval `
+cat /etc/iproute2/rt_tables | \
+    awk '/^[0-9]+[\s\t]+[a-zA-Z]+$/ {print}' | \
+    while read -a RT ; do
+      [ -z ${RT[1]} ] && continue
+      echo "declare -x rt_${RT[1]}=${RT[0]} ; "
+    done`
+
