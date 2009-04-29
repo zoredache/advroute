@@ -2,7 +2,7 @@
 
 DEBUG=0
 ERROR=0
-RULECOUNTER=1000
+declare -i RULECOUNTER=1000
 ACTION='none'
 
 # Make sure only root can run us.
@@ -70,6 +70,8 @@ rules() {
     if [ ${SECTION_NAME} == ${START_RULES} ] ; then
         echo "# ${SECTION_TYPE} ${SECTION_NAME}" >> ${ADVROUTE_TMP}
         echo "${CMD_IP} rule flush" >> ${ADVROUTE_TMP}
+        echo "${CMD_IP} rule add priority 32766 lookup main" >> ${ADVROUTE_TMP}
+        echo "${CMD_IP} rule add priority 32767 lookup default" >> ${ADVROUTE_TMP}
     fi
 }
 
@@ -79,9 +81,8 @@ rule() {
         return 1
     fi
     if [ ${SECTION_NAME} == ${START_RULES} ] ; then
-        let RULECOUNTER = ${RULECOUNTER} + 1
-        echo ${RULECOUNTER}
-        echo "${CMD_IP} rule add $*" >> ${ADVROUTE_TMP}
+        RULECOUNTER=1+${RULECOUNTER}
+        echo "${CMD_IP} rule add priority ${RULECOUNTER} $*" >> ${ADVROUTE_TMP}
     fi
 }
 
@@ -151,32 +152,31 @@ doStop() {
     fi
 }
 
-me="${0}"
 arg="${1}"
 
 case "${arg}" in
-    debug)
-        ACTION='debug'
-        doDebug
-        ;;
-    status)
-        ACTION='status'
-        doStatus
-        ;;
-    startrules)
-        ACTION='startrules'
-        START_RULES=${2}
-        doStart 
-        ;;
-    start)
-        ACTION='start'
-        doStart
-        ;;
-    stop)
-        ACTION='stop'
-        doStop
-        ;;
-    *)
-        echo "advroute: Unknown argument"
-        ;;
+  debug)
+    ACTION='debug'
+    doDebug
+    ;;
+  status)
+    ACTION='status'
+    doStatus
+    ;;
+  startrules)
+    ACTION='startrules'
+    START_RULES=${2}
+    doStart 
+    ;;
+  start)
+    ACTION='start'
+    doStart
+    ;;
+  stop)
+    ACTION='stop'
+    doStop
+    ;;
+  *)
+    echo "advroute: Unknown argument"
+    ;;
 esac
