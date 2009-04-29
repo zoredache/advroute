@@ -9,7 +9,7 @@ ACTION='none'
 if [ ! "${UID}" = 0 ] ; then
     echo >&2
     echo >&2
-    echo >&2 "Only user root can run FireHOL."
+    echo >&2 "Only user root can run Advroute."
     echo >&2
 fi
 
