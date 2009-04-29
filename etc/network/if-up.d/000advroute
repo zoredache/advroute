@@ -18,9 +18,12 @@ fi
 case "$METHOD" in
   static | manual | dhcp)
     for RT in $IF_RTTABLES; do
+        # try get just the correct link route for the interface
+        # on the main table
         /sbin/ip route list scope link table main proto kernel dev ${IFACE} \
         | while read ROUTE ; do
-            echo ${ROUTE}
+            # and add that route to all the tables mentioned in the rrtables option
+            # in the interfaces file
             /sbin/ip route add table ${RT} scope link proto kernel dev ${IFACE} ${ROUTE}
         done
     done
