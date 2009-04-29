@@ -6,7 +6,7 @@ default:
 	@echo 'There is nothing to be done for the default target.'
 
 update:
-	 svn update .
+	svn update .
 
 check-base-deps:
 	@echo 'Checking that base packages are installed'
@@ -26,6 +26,8 @@ install: check-root check-base-deps install-bin
 	@echo 'test'
 
 install-bin:
-	@echo install --group=0 --owner=0 --mode=0755 etc/init.d/advroute $(PREFIX)etc/init.d/
-	@echo install --group=0 --owner=0 --mode=0755 sbin/advroute $(PREFIX)sbin/
+	install --group=0 --owner=0 --mode=0755 etc/init.d/advroute $(PREFIX)etc/init.d/
+	update-rc.d advroute start 41 S .
+	install --group=0 --owner=0 --mode=0755 sbin/advroute $(PREFIX)sbin/
+	install --group=0 --owner=0 --mode=0755 sbin/export_rttables $(PREFIX)sbin/
 

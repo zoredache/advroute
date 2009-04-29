@@ -2,6 +2,7 @@
 
 DEBUG=0
 ERROR=0
+RULECOUNTER=1000
 ACTION='none'
 
 # Make sure only root can run us.
@@ -52,15 +53,15 @@ route() {
         ERROR=1
         return 1
     fi
-    if [ ${ACTION} == "start" ] ; then
+    case "${ACTION}" in
+      startrules ) : ;;
+      start | debug )
         echo "${CMD_IP} route add $* proto static table ${SECTION_NAME} &>/dev/null" >> ${ADVROUTE_TMP}
-    fi
-    if [ ${ACTION} == "debug" ] ; then
-        echo "${CMD_IP} route add $* proto static table ${SECTION_NAME} &>/dev/null" >> ${ADVROUTE_TMP}
-    fi
-    if [ ${ACTION} == "stop" ] ; then
+        ;;
+      stop | * )
         echo "${CMD_IP} route flush $* proto static table ${SECTION_NAME} &>/dev/null" >> ${ADVROUTE_TMP}
-    fi
+        ;;
+    esac
 }
 
 rules() {
@@ -78,6 +79,8 @@ rule() {
         return 1
     fi
     if [ ${SECTION_NAME} == ${START_RULES} ] ; then
+        let RULECOUNTER = ${RULECOUNTER} + 1
+        echo ${RULECOUNTER}
         echo "${CMD_IP} rule add $*" >> ${ADVROUTE_TMP}
     fi
 }
@@ -148,7 +151,6 @@ doStop() {
     fi
 }
 
-
 me="${0}"
 arg="${1}"
 
@@ -163,7 +165,7 @@ case "${arg}" in
         ;;
     startrules)
         ACTION='startrules'
-	START_RULES=${2}
+        START_RULES=${2}
         doStart 
         ;;
     start)
