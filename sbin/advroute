@@ -55,6 +55,9 @@ route() {
     if [ ${ACTION} == "start" ] ; then
         echo "${CMD_IP} route add $* proto static table ${SECTION_NAME} &>/dev/null" >> ${ADVROUTE_TMP}
     fi
+    if [ ${ACTION} == "debug" ] ; then
+        echo "${CMD_IP} route add $* proto static table ${SECTION_NAME} &>/dev/null" >> ${ADVROUTE_TMP}
+    fi
     if [ ${ACTION} == "stop" ] ; then
         echo "${CMD_IP} route flush $* proto static table ${SECTION_NAME} &>/dev/null" >> ${ADVROUTE_TMP}
     fi
@@ -160,6 +163,8 @@ case "${arg}" in
         ;;
     startrules)
         ACTION='startrules'
+	START_RULES=${2}
+        doStart 
         ;;
     start)
         ACTION='start'
