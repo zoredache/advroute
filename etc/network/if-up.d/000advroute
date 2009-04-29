@@ -6,13 +6,8 @@
 #
 
 case "$ADDRFAM" in
-    inet) : ;;
-    *) exit 0 ;;
-esac
-
-case "$METHOD" in
-    static) : ;;
-    *) exit 0 ;;
+  inet) : ;;
+  *) exit 0 ;;
 esac
 
 if [ -z "$IF_RTTABLES" ] ; then
@@ -20,12 +15,15 @@ if [ -z "$IF_RTTABLES" ] ; then
     exit 0
 fi
 
-if [ -z "$IF_NETWORK" ] ; then
-    echo >&2
-    echo >&2 "Setting the 'network' option is required."
-    exit 1
-fi
-
-for RT in $IF_RTTABLES; do
-    /sbin/ip route add $IF_NETWORK/$IF_NETMASK dev $IFACE table $RT src $IF_ADDRESS
-done
+case "$METHOD" in
+  static | manual | dhcp)
+    for RT in $IF_RTTABLES; do
+        /sbin/ip route list scope link table main proto kernel dev ${IFACE} \
+        | while read ROUTE ; do
+            echo ${ROUTE}
+            /sbin/ip route add table ${RT} scope link proto kernel dev ${IFACE} ${ROUTE}
+        done
+    done
+    ;;
+  *) exit 0 ;;
+esac

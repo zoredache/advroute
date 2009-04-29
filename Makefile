@@ -28,6 +28,7 @@ install: check-root check-base-deps install-bin
 install-bin:
 	install --group=0 --owner=0 --mode=0755 etc/init.d/advroute $(PREFIX)etc/init.d/
 	update-rc.d advroute start 41 S .
+	install --group=0 --owner=0 --mode=0755 etc/network/if-up.d/000advroute $(PREFIX)etc/network/if-up.d/
 	install --group=0 --owner=0 --mode=0755 sbin/advroute $(PREFIX)sbin/
 	install --group=0 --owner=0 --mode=0755 sbin/export_rttables $(PREFIX)sbin/
 
