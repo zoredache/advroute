@@ -20,6 +20,12 @@ if [ -z "$IF_RTTABLES" ] ; then
     exit 0
 fi
 
+if [ -z "$IF_NETWORK" ] ; then
+    echo >&2
+    echo >&2 "Setting the 'network' option is required."
+    exit 1
+fi
+
 for RT in $IF_RTTABLES; do
     /sbin/ip route add $IF_NETWORK/$IF_NETMASK dev $IFACE table $RT src $IF_ADDRESS
 done
