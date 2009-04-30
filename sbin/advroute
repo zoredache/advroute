@@ -11,6 +11,7 @@ if [ ! "${UID}" = 0 ] ; then
     echo >&2
     echo >&2 "Only user root can run Advroute."
     echo >&2
+    exit 1
 fi
 
 START_ADVROUTE=NO
@@ -81,7 +82,7 @@ rule() {
         return 1
     fi
     if [ ${SECTION_NAME} == ${START_RULES} ] ; then
-        RULECOUNTER=1+${RULECOUNTER}
+        RULECOUNTER=100+${RULECOUNTER}
         echo "${CMD_IP} rule add priority ${RULECOUNTER} $*" >> ${ADVROUTE_TMP}
     fi
 }
