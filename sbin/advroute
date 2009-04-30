@@ -46,7 +46,8 @@ SECTION_NAME=""
 rrtable() {
     SECTION_TYPE="rrtable"
     SECTION_NAME=${1}
-    echo "# ${SECTION_TYPE} ${SECTION_NAME}" >> ${ADVROUTE_TMP}
+    echo "# ${SECTION_TYPE} ${SECTION_NAME}" >> ${ADVROUTE_TMP}/route_flush
+    echo "# ${SECTION_TYPE} ${SECTION_NAME}" >> ${ADVROUTE_TMP}/route_add
 }
 
 route() {
@@ -57,10 +58,11 @@ route() {
     case "${ACTION}" in
       startrules ) : ;;
       start | debug )
-        echo "${CMD_IP} route add $* proto static table ${SECTION_NAME} &>/dev/null" >> ${ADVROUTE_TMP}
+        echo "${CMD_IP} route flush $* proto static table ${SECTION_NAME} || echo fail" >> ${ADVROUTE_TMP}/route_flush
+        echo "${CMD_IP} route add $* proto static table ${SECTION_NAME} || echo fail" >> ${ADVROUTE_TMP}/route_add
         ;;
       stop | * )
-        echo "${CMD_IP} route flush $* proto static table ${SECTION_NAME} &>/dev/null" >> ${ADVROUTE_TMP}
+        echo "${CMD_IP} route flush $* proto static table ${SECTION_NAME}" >> ${ADVROUTE_TMP}/route_flush
         ;;
     esac
 }
@@ -69,10 +71,11 @@ rules() {
     SECTION_TYPE="rules"
     SECTION_NAME=${1}
     if [ ${SECTION_NAME} == ${START_RULES} ] ; then
-        echo "# ${SECTION_TYPE} ${SECTION_NAME}" >> ${ADVROUTE_TMP}
-        echo "${CMD_IP} rule flush" >> ${ADVROUTE_TMP}
-        echo "${CMD_IP} rule add priority 32766 lookup main" >> ${ADVROUTE_TMP}
-        echo "${CMD_IP} rule add priority 32767 lookup default" >> ${ADVROUTE_TMP}
+        echo "# ${SECTION_TYPE} ${SECTION_NAME}" >> ${ADVROUTE_TMP}/rule_flush
+        echo "# ${SECTION_TYPE} ${SECTION_NAME}" >> ${ADVROUTE_TMP}/rule_add
+        echo "${CMD_IP} rule flush" >> ${ADVROUTE_TMP}/rule_flush
+        echo "${CMD_IP} rule add priority 32766 lookup main" >> ${ADVROUTE_TMP}/rule_add
+        echo "${CMD_IP} rule add priority 32767 lookup default" >> ${ADVROUTE_TMP}/rule_add
     fi
 }
 
@@ -83,7 +86,7 @@ rule() {
     fi
     if [ ${SECTION_NAME} == ${START_RULES} ] ; then
         RULECOUNTER=100+${RULECOUNTER}
-        echo "${CMD_IP} rule add priority ${RULECOUNTER} $*" >> ${ADVROUTE_TMP}
+        echo "${CMD_IP} rule add priority ${RULECOUNTER} $*" >> ${ADVROUTE_TMP}/rule_add
     fi
 }
 
@@ -117,23 +120,45 @@ doStatus() {
     return 0
 }
 
+createWorkDir() {
+    mkdir ${ADVROUTE_TMP}
+    touch ${ADVROUTE_TMP}/route_flush
+    touch ${ADVROUTE_TMP}/route_add
+    touch ${ADVROUTE_TMP}/rule_flush
+    touch ${ADVROUTE_TMP}/rule_add
+    touch ${ADVROUTE_TMP}/start
+}
+
+cleanWorkDir() {
+    rm -rf ${ADVROUTE_TMP}
+}
+
 doDebug() {
     DEBUG=1
+    createWorkDir
     echo "advroute: Processing file ${ADVROUTE_CONFIG}"
     source ${ADVROUTE_CONFIG}
+    cat ${ADVROUTE_TMP}/route_flush ${ADVROUTE_TMP}/route_add \
+        ${ADVROUTE_TMP}/rule_flush ${ADVROUTE_TMP}/rule_add >> ${ADVROUTE_TMP}/start
+    echo "${CMD_IP} route flush cache" >> ${ADVROUTE_TMP}/start
     echo "advroute: Displaying rules and routes"
-    ${CMD_LESS} ${ADVROUTE_TMP}
-    test -e ${ADVROUTE_TMP} && ${CMD_RM} -rf ${ADVROUTE_TMP}
+    ${CMD_LESS}  ${ADVROUTE_TMP}/start
+    cleanWorkDir
 }
 
 doStart() {
     echo "advroute: Processing file ${ADVROUTE_CONFIG}"
+    createWorkDir
     source ${ADVROUTE_CONFIG}
-    echo "${CMD_IP} route flush cache" >> ${ADVROUTE_TMP}
+    cat ${ADVROUTE_TMP}/route_flush ${ADVROUTE_TMP}/route_add \
+        ${ADVROUTE_TMP}/rule_flush ${ADVROUTE_TMP}/rule_add >> ${ADVROUTE_TMP}/start
+    echo "${CMD_IP} route flush cache" >> ${ADVROUTE_TMP}/start
     if [ ${ERROR} -eq 0 ] ; then
         echo "advroute: Activating new rules and routes"
-        source ${ADVROUTE_TMP}
-        test -e ${ADVROUTE_TMP} && ${CMD_RM} -rf ${ADVROUTE_TMP}
+        set -x
+        source ${ADVROUTE_TMP}/start
+        set +x
+        cleanWorkDir
     else
         echo "advroute: Error generating script"
     fi
@@ -142,12 +167,15 @@ doStart() {
 doStop() {
     START_RULES=standard
     echo "advroute: Processing file ${ADVROUTE_CONFIG}"
+    createWorkDir
     source ${ADVROUTE_CONFIG}
-    echo "${CMD_IP} route flush cache" >> ${ADVROUTE_TMP}
+    cat ${ADVROUTE_TMP}/route_flush ${ADVROUTE_TMP}/route_add \
+        ${ADVROUTE_TMP}/rule_flush ${ADVROUTE_TMP}/rule_add >> ${ADVROUTE_TMP}/start
+    echo "${CMD_IP} route flush cache" >> ${ADVROUTE_TMP}/start
     if [ ${ERROR} -eq 0 ] ; then
         echo "advroute: Flushing advanced routes"
-        source ${ADVROUTE_TMP}
-        test -e ${ADVROUTE_TMP} && ${CMD_RM} -rf ${ADVROUTE_TMP}
+        source ${ADVROUTE_TMP}/start
+        cleanWorkDir
     else
         echo "advroute: Error generating script"
     fi
