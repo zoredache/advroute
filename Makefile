@@ -21,10 +21,11 @@ check-root:
 
 check-deps:
 	@echo 'Check (and install) dependancies'
-	test -f /var/lib/dpkg/info/iproute.list || apt-get -y install iproute
-	test -f /var/lib/dpkg/info/firehol.list || apt-get -y install firehol
+	@test -f /var/lib/dpkg/info/iproute.list || apt-get -y install iproute
+	@test -f /var/lib/dpkg/info/firehol.list || apt-get -y install firehol
 
-install: check-root check-base-deps install-bin install-conf
+install: check-root check-base-deps check-deps \
+         install-bin install-conf
 
 install-bin:
 	@$(INSTALL_PROGRAM) etc/init.d/advroute $(PREFIX)etc/init.d/
@@ -41,7 +42,7 @@ install-conf:
 	@mkdir -p $(PREFIX)usr/share/doc/advroute/examples/
 # /etc/network/routes
 	@$(INSTALL_DATA) etc/network/routes \
-	                $(PREFIX)usr/share/doc/advroute/examples/routes
+	                 $(PREFIX)usr/share/doc/advroute/examples/routes
 	@if test ! -f $(PREFIX)etc/network/routes; then \
 		echo "Installing config file /etc/network/routes"; \
 		$(INSTALL_DATA) etc/network/routes \
@@ -53,4 +54,7 @@ install-conf:
 		$(INSTALL_DATA) etc/default/advroute \
 		                $(PREFIX)etc/default/advroute; \
 	fi;
+# /usr/share/doc/advroute/examples/firehol.conf
+	@$(INSTALL_DATA) usr/share/doc/advroute/examples/firehol.conf \
+	                 $(PREFIX)usr/share/doc/advroute/examples/firehol.conf
 
