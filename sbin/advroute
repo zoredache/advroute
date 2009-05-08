@@ -192,11 +192,17 @@ case "${arg}" in
     ;;
   startrules)
     ACTION='startrules'
-    START_RULES=${2}
-    doStart 
+    if [ -n "${2}" ] ; then
+        START_RULES=${2}
+    else
+        echo 'Missing required ruleset name'
+    fi
     ;;
   start)
     ACTION='start'
+    if [ -n "${2}" ] ; then
+        START_RULES=${2}
+    fi
     doStart
     ;;
   stop)
