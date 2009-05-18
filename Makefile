@@ -7,9 +7,6 @@ INSTALL_DATA:=/usr/bin/install --group=0 --owner=0 --mode=0644
 default:
 	@echo 'There is nothing to be done for the default target.'
 
-update:
-	@svn update .
-
 check-base-deps:
 	@echo 'Checking that base packages are installed'
 	@test -f /var/lib/dpkg/info/coreutils.list
