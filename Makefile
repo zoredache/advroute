@@ -28,7 +28,7 @@ install-bin:
 	@$(INSTALL_PROGRAM) etc/init.d/advroute $(PREFIX)etc/init.d/
 	@if test ! -f $(PREFIX)/etc/rcS.d/S41advroute; then \
 		echo "Enabling Startup Links"; \
-		@update-rc.d advroute start 41 S . ;\
+		update-rc.d advroute start 41 S . ;\
 	fi;
 	@$(INSTALL_PROGRAM) etc/network/if-up.d/000advroute $(PREFIX)etc/network/if-up.d/
 	@$(INSTALL_PROGRAM) sbin/advroute $(PREFIX)sbin/
