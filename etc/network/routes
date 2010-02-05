@@ -13,7 +13,6 @@ rules default
 
 rules split
     rule to 172.16.0.0/12 lookup ${rt_district}
-    rule to 168.99.101.0/24 lookup ${rt_district}
     rule fwmark 10 lookup ${rt_district}
     rule fwmark 20 lookup ${rt_comcast}
     rule lookup ${rt_district}

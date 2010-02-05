@@ -15,6 +15,10 @@ if [ -z "$IF_RTTABLES" ] ; then
     exit 0
 fi
 
+if [ -z "$IF_RTPROTO" ] ; then
+    IF_RTPROTO='kernel'
+fi
+
 case "$METHOD" in
   static | manual | dhcp)
     for RT in $IF_RTTABLES; do
@@ -27,6 +31,21 @@ case "$METHOD" in
             /sbin/ip route add table ${RT} scope link proto kernel dev ${IFACE} ${ROUTE}
         done
     done
+    # if rtproto is set to all then we should copy all the routes
+    # this has been primarilly added to add the routes needed for an
+    # openvpn tun* setup
+    if [ "$IF_RTPROTO" = "all" ] ; then
+        for RT in $IF_RTTABLES; do
+            # try get just the correct link route for the interface
+            # on the main table
+            /sbin/ip route list scope global proto boot table main dev ${IFACE} \
+            | while read ROUTE ; do
+                # and add that route to all the tables mentioned in the rrtables option
+                # in the interfaces file
+                /sbin/ip route add table ${RT} scope global proto boot dev ${IFACE} ${ROUTE}
+            done
+        done
+    fi
     ;;
   *) exit 0 ;;
 esac
