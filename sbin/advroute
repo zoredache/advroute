@@ -26,7 +26,7 @@ while read -r -a RPSTAT ; do
     exit 1
     break
   fi
-done < <(sysctl -a 2>/dev/null | grep '\.rp_filter')
+done < <(sysctl -a 2>/dev/null | grep '\.rp_filter' | grep -v 'lo.rp_filter')
 
 
 START_ADVROUTE=NO
