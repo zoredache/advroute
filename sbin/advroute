@@ -8,11 +8,26 @@ ACTION='none'
 # Make sure only root can run us.
 if [ ! "${UID}" = 0 ] ; then
     echo >&2
-    echo >&2
     echo >&2 "Only user root can run Advroute."
     echo >&2
     exit 1
 fi
+
+while read -r -a RPSTAT ; do
+
+  [[ -z ${RPSTAT[0]} ]] && continue  # skip empty lines
+
+  if [[ "0" != "${RPSTAT[2]}" ]] ; then
+    echo >&2
+    echo >&2 "The reverse path filter must be disabled on all interfaces!"
+    echo >&2 "The RP filter feature is incompatible with policy routing"
+    echo >&2 "See: /sbin/sysctl -a | grep '\.rp_filter' and /etc/sysctl.conf"
+    echo >&2
+    exit 1
+    break
+  fi
+done < <(sysctl -a 2>/dev/null | grep '\.rp_filter')
+
 
 START_ADVROUTE=NO
 START_RULES=standard
